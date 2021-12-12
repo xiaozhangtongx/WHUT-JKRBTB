@@ -115,11 +115,11 @@ def cancelBind(sessionId):
 
 
 if __name__ == '__main__':
-    data = {'sn': '0121910870218', 'idCard': '075013'}
+    data = {'sn': '你的账号', 'idCard': '你的密码'}
     id = request_sessionId(data)
     request_bindUserInfo(id, data)
     res = request_monitorRegister(id, "湖北省", "武汉市", "武昌区", "友谊大道")
-    print(res)
+    # print(res)
     if (res['code'] == 50000):
         mail.sendmail(["你今天已经打卡了", res])
     else:
