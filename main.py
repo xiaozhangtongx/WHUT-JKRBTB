@@ -1,6 +1,7 @@
 import json
 import random
 
+import mail
 import requests
 
 temperature = ["36\"C~36.5°C", "36.5°C~36.9°C"]
@@ -31,8 +32,9 @@ def request_sessionId(json_data):
     }
     headers['User-Agent'] = random.choice(useragentlist)
     r = requests.post(url=url, headers=headers, json=json_data)
+    # print(r)
     result = json.loads(r.text)
-    print("request_sessionId", result)
+    # print("request_sessionId", result)
     sessionId = result['data']['sessionId']
     return str(sessionId)
 
@@ -55,7 +57,7 @@ def request_bindUserInfo(sessionId, json_data):
     print(json_data)
     r = requests.post(url=url, headers=headers, json=json_data)
     result = json.loads(r.text)
-    print("request_bindUserInfo", result)
+    # print("request_bindUserInfo", result)
 
 
 def request_monitorRegister(sessionId, province, city, county, street):
@@ -92,7 +94,7 @@ def request_monitorRegister(sessionId, province, city, county, street):
     }
     r = requests.post(url=url, headers=headers, json=json_data)
     result = json.loads(r.text)
-    print("request_monitorRegister", result)
+    # print("request_monitorRegister", result)
     return result
 
 
@@ -109,14 +111,18 @@ def cancelBind(sessionId):
     headers['User-Agent'] = random.choice(useragentlist)
     r = requests.post(url=url, headers=headers)
     result = json.loads(r.text)
-    print("cancelBind", result)
+    # print("cancelBind", result)
 
 
 if __name__ == '__main__':
-    data = {'sn': '你的学号', 'idCard': '你的身份证后六位'}
+    data = {'sn': '0121910870218', 'idCard': '075013'}
     id = request_sessionId(data)
-    print()
     request_bindUserInfo(id, data)
     res = request_monitorRegister(id, "湖北省", "武汉市", "武昌区", "友谊大道")
     print(res)
+    if (res['code'] == 50000):
+        mail.sendmail(["你今天已经打卡了", res])
+    else:
+        mail.sendmail(["打卡成功", res])
+    # mail.sendmail('打卡成功')
     cancelBind(id)
