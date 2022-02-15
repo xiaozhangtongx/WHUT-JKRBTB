@@ -1,4 +1,4 @@
-# 武汉理工大学健康报送小脚本（研究生版）
+# 武汉理工大学健康报送脚本（研究生版）
 
 本项目修改自xiaozhangtongx大佬的脚本，原链接https://github.com/xiaozhangtongx/WHUT-JKRBTB
 
