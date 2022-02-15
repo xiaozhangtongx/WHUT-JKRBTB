@@ -18,62 +18,66 @@ useragentlist = [
 
 
 def request_sessionId(json_data):
-    url = "https://zhxg.whut.edu.cn/yqtjwx/api/login/checkBind"
+    url = "https://yjsxx.whut.edu.cn/wx/api/login/checkBind"
     headers = {
         "Accept-Encoding": "gzip, deflate, br",
         "content-type": "application/json",
 
-        "Referer": "https://servicewechat.com/wxa0738e54aae84423/9/page-frame.html",
+        "Referer": "https://servicewechat.com/wx225eb50c34f6f98e/13/page-frame.html",
         "X-Tag": "flyio",
         "Content-Length": "100",
         "Accept-Language": "zh-cn",
         "Connection": "keep - alive",
-        "Host": "zhxg.whut.edu.cn"
+        "Host": "yjsxx.whut.edu.cn"
     }
     headers['User-Agent'] = random.choice(useragentlist)
     r = requests.post(url=url, headers=headers, json=json_data)
-    # print(r)
+    print(r)
     result = json.loads(r.text)
-    # print("request_sessionId", result)
+    print("request_sessionId", result)
     sessionId = result['data']['sessionId']
+    f = open("sessionId.txt",'a')
+    f.write("\n")
+    f.write(sessionId)
+    f.close()
     return str(sessionId)
 
 
 def request_bindUserInfo(sessionId, json_data):
-    url = "https://zhxg.whut.edu.cn/yqtjwx/api/login/bindUserInfo"
+    url = "https://yjsxx.whut.edu.cn/wx/api/login/bindUserInfo"
     headers = {
         "Accept-Encoding": "gzip, deflate, br",
         "content-type": "application/json",
-        "Referer": "https://servicewechat.com/wxa0738e54aae84423/5/page-frame.html",
+        "Referer": "https://servicewechat.com/wx225eb50c34f6f98e/13/page-frame.html",
         "Cookie": "JSESSIONID=%s" % (sessionId),
         "Accept": "*/*",
         "X-Tag": "flyio",
         "Content-Length": "2",
         "Accept-Language": "zh-cn",
         "Connection": "keep - alive",
-        "Host": "zhxg.whut.edu.cn"
+        "Host": "yjsxx.whut.edu.cn"
     }
     headers['User-Agent'] = random.choice(useragentlist)
     print(json_data)
     r = requests.post(url=url, headers=headers, json=json_data)
     result = json.loads(r.text)
-    # print("request_bindUserInfo", result)
+    print("request_bindUserInfo", result)
 
 
 def request_monitorRegister(sessionId, province, city, county, street):
     currentAddress = str(province) + str(city) + str(county) + str(street)
-    url = "https://zhxg.whut.edu.cn/yqtjwx/./monitorRegister"
+    url = "https://yjsxx.whut.edu.cn/wx/./monitorRegister"
     headers = {
         "Accept-Encoding": "gzip, deflate, br",
         "content-type": "application/json",
-        "Referer": "https://servicewechat.com/wxa0738e54aae84423/5/page-frame.html",
+        "Referer": "https://servicewechat.com/wx225eb50c34f6f98e/13/page-frame.html",
         "Cookie": "JSESSIONID=%s" % (sessionId),
         "Accept": "*/*",
         "X-Tag": "flyio",
         "Content-Length": "203",
         "Accept-Language": "zh-cn",
         "Connection": "keep - alive",
-        "Host": "zhxg.whut.edu.cn"
+        "Host": "yjsxx.whut.edu.cn"
     }
     headers['User-Agent'] = random.choice(useragentlist)
     json_data = {
@@ -84,7 +88,7 @@ def request_monitorRegister(sessionId, province, city, county, street):
         "healthInfo": "正常",
         "isDiagnosis": 0,
         "isFever": 0,
-        "isInSchool": "1",
+        "isInSchool": "0",
         "isLeaveChengdu": 0,
         "isSymptom": "0",
         "temperature": random.choice(temperature),
@@ -94,33 +98,33 @@ def request_monitorRegister(sessionId, province, city, county, street):
     }
     r = requests.post(url=url, headers=headers, json=json_data)
     result = json.loads(r.text)
-    # print("request_monitorRegister", result)
+    print("request_monitorRegister", result)
     return result
 
 
 def cancelBind(sessionId):
-    url = "https://zhxg.whut.edu.cn/yqtjwx/api/login/cancelBind"
+    url = "https://yjsxx.whut.edu.cn/wx/api/login/cancelBind"
     headers = {
         "Accept-Encoding": "gzip, deflate, br",
         "content-type": "application/json",
-        "Referer": "https://servicewechat.com/wxa0738e54aae84423/5/page-frame.html",
+        "Referer": "https://servicewechat.com/wx225eb50c34f6f98e/13/page-frame.html",
         "Cookie": "JSESSIONID=%s" % (sessionId),
         "Connection": "keep - alive",
-        "Host": "zhxg.whut.edu.cn"
+        "Host": "yjsxx.whut.edu.cn"
     }
     headers['User-Agent'] = random.choice(useragentlist)
     r = requests.post(url=url, headers=headers)
     result = json.loads(r.text)
-    # print("cancelBind", result)
+    print("cancelBind", result)
 
 
 if __name__ == '__main__':
-    data = {'sn': '你的账号', 'idCard': '密码'}
+    data = {'sn': '修改为学号', 'idCard': '修改为身份证后六位'}
     sessionId = request_sessionId(data)
     request_bindUserInfo(sessionId, data)
-    res = request_monitorRegister(sessionId, "湖北省", "武汉市", "武昌区", "友谊大道")
+    res = request_monitorRegister(sessionId, "湖北省", "武汉市", "洪山区", "工大路")
     if res['code'] == 0:
-        mail.sendmail(["success", res['message']])
+       mail.sendmail(["success", res['message']])
     else:
-        mail.sendmail(["error", res['message']])
+       mail.sendmail(["error", res['message']])
     cancelBind(sessionId)
