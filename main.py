@@ -88,7 +88,7 @@ def request_monitorRegister(sessionId, province, city, county, street):
         "healthInfo": "正常",
         "isDiagnosis": 0,
         "isFever": 0,
-        "isInSchool": "0",
+        "isInSchool": "0",  # 如果在学校，修改为1
         "isLeaveChengdu": 0,
         "isSymptom": "0",
         "temperature": random.choice(temperature),
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     request_bindUserInfo(sessionId, data)
     res = request_monitorRegister(sessionId, "湖北省", "武汉市", "洪山区", "工大路")
     if res['code'] == 0:
-       mail.sendmail(["success", res['message']])
+       mail.sendmail(["success", "今日打卡成功"])
     else:
        mail.sendmail(["error", res['message']])
     cancelBind(sessionId)
