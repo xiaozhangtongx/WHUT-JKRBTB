@@ -1,126 +1,152 @@
-import json
-import random
-
-import mail
 import requests
+import json
+import base64
+import random
+import mail
 
-temperature = ["36\"C~36.5°C", "36.5°C~36.9°C"]
+# 在此填写账号密码，账号通常为学号，密码通常为身份证后6位。注意：需要解绑微信
+account = "学号"
+password = "密码"
+# 在此填写定位地址（这个是余家头的地址）
+province = "湖北省"
+city = "武汉市"
+county = "武昌区"
+street = "友谊大道"
+# 在此填写填报体温（不要乱改）
+temperature = "36.5°C~36.9°C"
+# 返回的状况
+message = ''
 
-useragentlist = [
-    "Mozilla/5.0 (Linux; U; Android 7.1.2; zh-cn; MI 6 Build/NXTHUAWEI) AppleWebKit/537.36 (KHTML, like Gecko)Version/4.0 MQQBrowser/9.9 Mobile Safari/537.36",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 9_3_5 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Mobile/13G36 baiduboxapp/0_01.5.2.8_enohpi_6311_046/5.3.9_1C2%8enohPi/1099a/7D4BD508A31C4692ACC31489A6AA6FAA3D5694CC7OCARCEMSHG/1",
-    "Mozilla/5.0 (Linux; U; Android 4.4.4; en-us; vivo X5Max Build/KTU84P) AppleWebKit/534.30 (KHTML, like Gecko) Version/4.0 UCBrowser/1.0.0.100 U3/0.8.0 Mobile Safari/534.30 AliApp(TB/6.5.0) WindVane/8.0.0 1080X1920 GCanvas/1.4.2.21",
-    "Mozilla/5.0 (iPhone; CPU iPhone OS 10_2 like Mac OS X) AppleWebKit/602.3.12 (KHTML, like Gecko) Mobile/14C92 baiduboxapp/0_01.5.2.8_enohpi_8022_2421/2.01_2C2%8enohPi/1099a/05D5623EBB692D46C9C9659B23D68FBD5C7FEB228ORMNJBQOHM/1",
-    "Mozilla/5.0 (Linux; Android 8.0.0; BKL-AL00 Build/HUAWEIBKL-AL00; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/76.0.3809.89 Mobile Safari/537.36 T7/11.19 SP-engine/2.15.0 baiduboxapp/11.19.5.10 (Baidu; P1 8.0.0)",
-    "Mozilla/5.0 (Linux; Android 8.1.0; vivo X20 Build/OPM1.171019.011; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/76.0.3809.89 Mobile Safari/537.36 T7/11.19 SP-engine/2.15.0 baiduboxapp/11.19.5.10 (Baidu; P1 8.1.0)",
-    "Mozilla/5.0 (Linux; Android 9; DUK-AL20 Build/HUAWEIDUK-AL20; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/76.0.3809.89 Mobile Safari/537.36 T7/11.19 SP-engine/2.15.0 baiduboxapp/11.19.5.10 (Baidu; P1 9)"
+# User-Agent列表 分别是Android微信、iOS微信、PC微信
+ua_list = [
+    "Mozilla/5.0 (Linux; Android 11; POCO F2 Pro Build/RKQ1.200826.002; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/74.0.3729.136 Mobile Safari/537.36 MMWEBID/1230 MicroMessenger/8.0.17.2040(0x28001133) Process/toolsmp WeChat/arm64 Weixin NetType/WIFI Language/zh_CN ABI/arm64",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 15_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.20(0x1800142f) NetType/WIFI Language/zh_CN",
+    "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36 MicroMessenger/7.0.9.501 NetType/WIFI MiniProgramEnv/Windows WindowsWechat"
 ]
 
+# http请求头
+headers = {
+    "Host": "zhxg.whut.edu.cn",
+    "Connection": "keep-alive",
+    # "Content-Length": "",
+    # "User-Agent": "",
+    "X-Tag": "flyio",
+    "content-type": "application/json",
+    "encode": "true",
+    "Referer": "https://servicewechat.com/wxa0738e54aae84423/21/page-frame.html",
+    "Accept-Encoding": "gzip, deflate, br"
+}
 
-def request_sessionId(json_data):
+log = ""  # 运行日志
+
+
+# 获取SessionID
+# https://zhxg.whut.edu.cn/yqtjwx/api/login/checkBind
+def check_bind():
+    global headers
+    global log
     url = "https://zhxg.whut.edu.cn/yqtjwx/api/login/checkBind"
-    headers = {
-        "Accept-Encoding": "gzip, deflate, br",
-        "content-type": "application/json",
-
-        "Referer": "https://servicewechat.com/wxa0738e54aae84423/9/page-frame.html",
-        "X-Tag": "flyio",
-        "Content-Length": "100",
-        "Accept-Language": "zh-cn",
-        "Connection": "keep - alive",
-        "Host": "zhxg.whut.edu.cn"
-    }
-    headers['User-Agent'] = random.choice(useragentlist)
-    r = requests.post(url=url, headers=headers, json=json_data)
-    # print(r)
-    result = json.loads(r.text)
-    # print("request_sessionId", result)
-    sessionId = result['data']['sessionId']
-    return str(sessionId)
+    headers["User-Agent"] = random.choice(ua_list)
+    data = dict_to_base64_bin({"sn": None, "idCard": None})
+    respounce = requests.post(url=url, headers=headers, data=data).json()
+    log += f"[获取SessionID] 返回消息:\n{respounce}\n"
+    if respounce["status"]:
+        resp_data = base64_str_to_dict(respounce["data"])
+        log += f"[获取SessionID] data解码:\n{resp_data}\n"
+        headers["Cookie"] = f"JSESSIONID={resp_data['sessionId']}"  # 写入Cookie
+        return True
+    else:
+        return False
 
 
-def request_bindUserInfo(sessionId, json_data):
+# 绑定身份
+# https://zhxg.whut.edu.cn/yqtjwx/api/login/bindUserInfo
+def bind_user_info():
+    global log
     url = "https://zhxg.whut.edu.cn/yqtjwx/api/login/bindUserInfo"
-    headers = {
-        "Accept-Encoding": "gzip, deflate, br",
-        "content-type": "application/json",
-        "Referer": "https://servicewechat.com/wxa0738e54aae84423/5/page-frame.html",
-        "Cookie": "JSESSIONID=%s" % (sessionId),
-        "Accept": "*/*",
-        "X-Tag": "flyio",
-        "Content-Length": "2",
-        "Accept-Language": "zh-cn",
-        "Connection": "keep - alive",
-        "Host": "zhxg.whut.edu.cn"
-    }
-    headers['User-Agent'] = random.choice(useragentlist)
-    print(json_data)
-    r = requests.post(url=url, headers=headers, json=json_data)
-    result = json.loads(r.text)
-    # print("request_bindUserInfo", result)
+    data = dict_to_base64_bin({"sn": account, "idCard": password})
+    respounce = requests.post(url=url, headers=headers, data=data).json()
+    log += f"[绑定身份] 返回消息:\n{respounce}\n"
+    if respounce["status"]:
+        resp_data = base64_str_to_dict(respounce["data"])
+        log += f"[绑定身份] data解码:\n{resp_data}\n"
+        return True
+    else:
+        return False
 
 
-def request_monitorRegister(sessionId, province, city, county, street):
-    currentAddress = str(province) + str(city) + str(county) + str(street)
+# 健康填报
+# https://zhxg.whut.edu.cn/yqtjwx/./monitorRegister
+def monitor_register():
+    global log
+    address = province + city + county + street
     url = "https://zhxg.whut.edu.cn/yqtjwx/./monitorRegister"
-    headers = {
-        "Accept-Encoding": "gzip, deflate, br",
-        "content-type": "application/json",
-        "Referer": "https://servicewechat.com/wxa0738e54aae84423/5/page-frame.html",
-        "Cookie": "JSESSIONID=%s" % (sessionId),
-        "Accept": "*/*",
-        "X-Tag": "flyio",
-        "Content-Length": "203",
-        "Accept-Language": "zh-cn",
-        "Connection": "keep - alive",
-        "Host": "zhxg.whut.edu.cn"
-    }
-    headers['User-Agent'] = random.choice(useragentlist)
-    json_data = {
+    dict_data = {
         "diagnosisName": "",
         "relationWithOwn": "",
-        "currentAddress": currentAddress,
+        "currentAddress": address,
         "remark": "无",
         "healthInfo": "正常",
-        "isDiagnosis": 0,
-        "isFever": 0,
+        "isDiagnosis": "0",
+        "isFever": "0",
         "isInSchool": "1",
-        "isLeaveChengdu": 0,
+        "isLeaveChengdu": "0",
         "isSymptom": "0",
-        "temperature": random.choice(temperature),
+        "temperature": temperature,
         "province": province,
         "city": city,
         "county": county
     }
-    r = requests.post(url=url, headers=headers, json=json_data)
-    result = json.loads(r.text)
-    # print("request_monitorRegister", result)
-    return result
+    data = dict_to_base64_bin(dict_data)
+    respounce = requests.post(url=url, headers=headers, data=data).json()
+    log += f"[健康填报] 返回消息:\n{respounce}\n"
+    if respounce["status"]:
+        resp_data = base64_str_to_dict(respounce["data"])
+        log += f"[健康填报] data解码:\n{resp_data}\n"
+        return True
+    else:
+        return False
 
 
-def cancelBind(sessionId):
+# 解绑：若不解绑，下次将无法绑定
+# https://zhxg.whut.edu.cn/yqtjwx/api/login/cancelBind
+def cancel_bind():
+    global log
     url = "https://zhxg.whut.edu.cn/yqtjwx/api/login/cancelBind"
-    headers = {
-        "Accept-Encoding": "gzip, deflate, br",
-        "content-type": "application/json",
-        "Referer": "https://servicewechat.com/wxa0738e54aae84423/5/page-frame.html",
-        "Cookie": "JSESSIONID=%s" % (sessionId),
-        "Connection": "keep - alive",
-        "Host": "zhxg.whut.edu.cn"
-    }
-    headers['User-Agent'] = random.choice(useragentlist)
-    r = requests.post(url=url, headers=headers)
-    result = json.loads(r.text)
-    # print("cancelBind", result)
+    respounce = requests.post(url=url, headers=headers).json()
+    log += f"[解绑账号] 返回消息:\n{respounce}\n"
+    if respounce["status"]:
+        resp_data = base64_str_to_dict(respounce["data"])
+        log += f"[解绑账号] data解码:\n{resp_data}\n"
+        return True
+    else:
+        return False
+
+
+def dict_to_base64_bin(data: dict) -> bin:
+    string = json.dumps(data)
+    binary = string.encode()
+    base64_binary = base64.b64encode(binary)
+    return base64_binary
+
+
+def base64_str_to_dict(data: str) -> dict:
+    string_binary = base64.b64decode(data)
+    string = string_binary.decode()
+    dictionary = json.loads(string)
+    return dictionary
 
 
 if __name__ == '__main__':
-    data = {'sn': '你的账号', 'idCard': '密码'}
-    sessionId = request_sessionId(data)
-    request_bindUserInfo(sessionId, data)
-    res = request_monitorRegister(sessionId, "湖北省", "武汉市", "武昌区", "友谊大道")
-    if res['code'] == 0:
-        mail.sendmail(["success", res['message']])
+    status = True
+    try:
+        if not (check_bind() and bind_user_info() and monitor_register()):
+            status = False
+    finally:
+        status &= cancel_bind()
+        print(log)
+
+    if status:
+        mail.sendmail(["【健康填报】填报成功", "打卡成功"])
     else:
-        mail.sendmail(["error", res['message']])
-    cancelBind(sessionId)
+        mail.sendmail(["【健康填报】填报失败", log])
